@@ -334,7 +334,7 @@ const app = {
         ui.showModal('adminConfigModal');
     },
 
-    saveAdminConfig() {
+    async saveAdminConfig() {
         const baseUrl = document.getElementById('adminApiBaseUrl').value.trim();
         const adminApiKey = document.getElementById('adminApiKeyInput').value.trim();
 
