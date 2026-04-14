@@ -323,6 +323,20 @@ const app = {
         ui.showModal('loginModal');
     },
 
+    // Check if user should be prompted to create their first tenant
+    checkFirstTimeUser: () => {
+        if (API_CONFIG.currentUser && !API_CONFIG.adminApiKey) {
+            // Regular user - check if they have any tenants
+            if (app.tenants && app.tenants.length === 0) {
+                // First time user - show friendly message and prompt to create tenant
+                setTimeout(() => {
+                    ui.showAlert('👋 Welcome! Create your first tenant to get started with RoomService!');
+                    app.openCreateTenantModal();
+                }, 1000);
+            }
+        }
+    },
+
     switchToAdminMode() {
         // Hide login modal and show admin config modal
         ui.hideModal('loginModal');
@@ -474,6 +488,9 @@ const app = {
             const response = await api.getTenants();
             app.tenants = response.tenants || []; // Extract tenants array from response
             ui.renderTenants(app.tenants);
+
+            // Check if this is a first-time user
+            app.checkFirstTimeUser();
         } catch (error) {
             ui.showError('tenantsTable', error.message);
         }
@@ -503,20 +520,87 @@ const app = {
         }
     },
 
+    openCreateTenantModal: () => {
+        const isAdmin = API_CONFIG.adminApiKey && !API_CONFIG.authToken;
+        const submitBtn = document.getElementById('submitCreateTenant');
+
+        if (isAdmin) {
+            // Admin mode - show all fields
+            document.getElementById('createTenantTitle').textContent = 'Create New Tenant';
+            document.getElementById('tenantNameField').classList.remove('d-none');
+            document.getElementById('tenantEmailField').classList.remove('d-none');
+            document.getElementById('tenantPlanField').classList.remove('d-none');
+            document.getElementById('userTenantMessage').classList.add('d-none');
+            document.getElementById('adminTenantInfo').classList.remove('d-none');
+            submitBtn.innerHTML = '<i class="bi bi-plus-circle me-1"></i>Create Tenant';
+        } else {
+            // Regular user mode - simplified form
+            document.getElementById('createTenantTitle').textContent = 'Create Your RoomService Tenant';
+            document.getElementById('tenantNameField').classList.remove('d-none');
+            document.getElementById('tenantEmailField').classList.add('d-none');
+            document.getElementById('tenantPlanField').classList.add('d-none');
+            document.getElementById('userTenantMessage').classList.remove('d-none');
+            document.getElementById('adminTenantInfo').classList.add('d-none');
+            submitBtn.innerHTML = '<i class="bi bi-rocket me-1"></i>Get Started Free';
+
+            // Set default plan to free
+            document.getElementById('tenantPlan').value = 'free';
+
+            // Pre-fill email with user's email
+            if (API_CONFIG.currentUser?.email) {
+                document.getElementById('tenantEmail').value = API_CONFIG.currentUser.email;
+            }
+
+            // Suggest a tenant name based on user's name
+            if (API_CONFIG.currentUser?.name && !document.getElementById('tenantName').value) {
+                const suggestedName = `${API_CONFIG.currentUser.name}'s App`;
+                document.getElementById('tenantName').placeholder = suggestedName;
+            }
+
+            // Clear any existing values
+            document.getElementById('tenantName').value = '';
+        }
+
+        ui.showModal('createTenantModal');
+    },
+
     createTenant: async () => {
         const name = document.getElementById('tenantName').value.trim();
-        const email = document.getElementById('tenantEmail').value.trim();
-        const plan = document.getElementById('tenantPlan').value;
+        let email, plan;
 
-        if (!name || !email) {
-            ui.showAlert('Please fill in all fields', 'danger');
-            return;
+        // Check if user is admin or regular user
+        const isAdmin = API_CONFIG.adminApiKey && !API_CONFIG.authToken;
+
+        if (isAdmin) {
+            // Admin mode - get all fields from form
+            email = document.getElementById('tenantEmail').value.trim();
+            plan = document.getElementById('tenantPlan').value;
+
+            if (!name || !email || !plan) {
+                ui.showAlert('Please fill in all fields', 'danger');
+                return;
+            }
+        } else {
+            // Regular user mode - use user info
+            email = API_CONFIG.currentUser?.email;
+            plan = 'free'; // Default to free plan for users
+
+            if (!name) {
+                ui.showAlert('Please enter a tenant name', 'danger');
+                return;
+            }
         }
 
         try {
             const response = await api.createTenant({ name, email, plan });
             const tenant = response.tenant || response; // Handle different response formats
-            ui.showAlert(`Tenant "${name}" created successfully!`);
+
+            if (isAdmin) {
+                ui.showAlert(`Tenant "${name}" created successfully!`);
+            } else {
+                ui.showAlert(`🎉 Welcome to RoomService! Your tenant "${name}" is ready to use!`);
+            }
+
             ui.hideModal('createTenantModal');
             document.getElementById('createTenantForm').reset();
 
@@ -637,9 +721,7 @@ document.addEventListener('DOMContentLoaded', () => {
     app.init();
 
     // Create tenant modal
-    document.getElementById('createTenantBtn').addEventListener('click', () => {
-        ui.showModal('createTenantModal');
-    });
+    document.getElementById('createTenantBtn').addEventListener('click', app.openCreateTenantModal);
 
     document.getElementById('submitCreateTenant').addEventListener('click', app.createTenant);
 

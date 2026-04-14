@@ -266,32 +266,49 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Create New Tenant</h5>
+                    <h5 class="modal-title" id="createTenantTitle">Create New Tenant</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- User-friendly message for regular users -->
+                    <div id="userTenantMessage" class="alert alert-info d-none">
+                        <h6 class="alert-heading"><i class="bi bi-rocket me-2"></i>Get Started with RoomService</h6>
+                        <p class="mb-0">Just give your tenant a name and we'll handle the rest! Your tenant will be ready in seconds with a free plan.</p>
+                    </div>
+
                     <form id="createTenantForm">
-                        <div class="mb-3">
-                            <label for="tenantName" class="form-label">Name</label>
-                            <input type="text" class="form-control" id="tenantName" required>
+                        <div class="mb-3" id="tenantNameField">
+                            <label for="tenantName" class="form-label">Tenant Name</label>
+                            <input type="text" class="form-control" id="tenantName" placeholder="My Awesome App" required>
+                            <div class="form-text">A name to identify your tenant</div>
                         </div>
-                        <div class="mb-3">
+
+                        <div class="mb-3 d-none" id="tenantEmailField">
                             <label for="tenantEmail" class="form-label">Email</label>
                             <input type="email" class="form-control" id="tenantEmail" required>
                         </div>
-                        <div class="mb-3">
+
+                        <div class="mb-3 d-none" id="tenantPlanField">
                             <label for="tenantPlan" class="form-label">Plan</label>
                             <select class="form-select" id="tenantPlan" required>
                                 <option value="free">Free</option>
-                                <option value="pro">Pro</option>
-                                <option value="enterprise">Enterprise</option>
+                                <option value="pro">Pro ($49/month)</option>
+                                <option value="enterprise">Enterprise (Contact us)</option>
                             </select>
+                        </div>
+
+                        <!-- Admin-only info -->
+                        <div id="adminTenantInfo" class="alert alert-warning d-none">
+                            <i class="bi bi-shield me-2"></i>
+                            <strong>Admin Mode:</strong> You have full control to create tenants for any user with custom plans and settings.
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="submitCreateTenant">Create</button>
+                    <button type="button" class="btn btn-primary" id="submitCreateTenant">
+                        <i class="bi bi-plus-circle me-1"></i>Create Tenant
+                    </button>
                 </div>
             </div>
         </div>
