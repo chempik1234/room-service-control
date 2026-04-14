@@ -1,21 +1,44 @@
 // API Configuration
 const API_CONFIG = {
     baseUrl: localStorage.getItem('apiBaseUrl') || 'https://roomservice-proxy.up.railway.app',
-    adminApiKey: localStorage.getItem('adminApiKey') || ''
+    adminApiKey: localStorage.getItem('adminApiKey') || '',
+    authToken: localStorage.getItem('authToken') || '',
+    currentUser: JSON.parse(localStorage.getItem('currentUser') || 'null')
 };
 
 // API helper functions
 const api = {
+    getAuthHeader() {
+        if (API_CONFIG.authToken) {
+            return `Bearer ${API_CONFIG.authToken}`;
+        } else if (API_CONFIG.adminApiKey) {
+            return API_CONFIG.adminApiKey;
+        }
+        return '';
+    },
+
     async request(endpoint, options = {}) {
         const url = `${API_CONFIG.baseUrl}${endpoint}`;
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${API_CONFIG.adminApiKey}`,
+            'Authorization': this.getAuthHeader(),
             ...options.headers
         };
 
         try {
             const response = await fetch(url, { ...options, headers });
+
+            // Handle 401 - unauthorized
+            if (response.status === 401) {
+                // Clear auth data and redirect to login
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+                API_CONFIG.authToken = '';
+                API_CONFIG.currentUser = null;
+                app.showLoginModal();
+                throw new Error('Authentication required');
+            }
+
             const data = await response.json();
 
             if (!response.ok) {
@@ -28,6 +51,19 @@ const api = {
             throw error;
         }
     },
+
+    // Authentication endpoints
+    signup: (data) => api.request('/api/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    login: (data) => api.request('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(data)
+    }),
+    logout: () => api.request('/api/auth/logout', {
+        method: 'POST'
+    }),
 
     // Tenant endpoints
     getTenants: () => api.request('/api/tenants'),
@@ -194,21 +230,192 @@ const app = {
     deleteTenantId: null,
 
     init: async () => {
-        // Check API configuration
-        if (!API_CONFIG.adminApiKey) {
-            ui.showModal('apiConfigModal');
+        // Check if user is authenticated
+        if (API_CONFIG.authToken && API_CONFIG.currentUser) {
+            // User is logged in
+            app.updateUIForLoggedInUser();
+            // Load initial data
+            await Promise.all([
+                app.loadTenants(),
+                app.loadStats(),
+                app.loadLogs()
+            ]);
+            // Set up auto-refresh for stats
+            setInterval(app.loadStats, 30000); // Every 30 seconds
+        } else if (API_CONFIG.adminApiKey) {
+            // Admin mode
+            app.updateUIForAdminMode();
+            // Load initial data
+            await Promise.all([
+                app.loadTenants(),
+                app.loadStats(),
+                app.loadLogs()
+            ]);
+            // Set up auto-refresh for stats
+            setInterval(app.loadStats, 30000); // Every 30 seconds
+        } else {
+            // Not configured - show login
+            app.showLoginModal();
+        }
+    },
+
+    updateUIForLoggedInUser() {
+        // Update navbar for logged-in user
+        const navbar = document.querySelector('.navbar-nav.ms-auto');
+        navbar.innerHTML = `
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-person-circle me-1"></i>${API_CONFIG.currentUser.name}
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" onclick="app.showApiConfigModal()">
+                        <i class="bi bi-gear me-2"></i>API Config
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" onclick="app.logout()">
+                        <i class="bi bi-box-arrow-right me-2"></i>Logout
+                    </a></li>
+                </ul>
+            </li>
+        `;
+    },
+
+    updateUIForAdminMode() {
+        // Update navbar for admin mode
+        const navbar = document.querySelector('.navbar-nav.ms-auto');
+        navbar.innerHTML = `
+            <li class="nav-item">
+                <a class="nav-link" href="#" onclick="app.showApiConfigModal()">
+                    <i class="bi bi-gear me-1"></i>API Config
+                </a>
+            </li>
+            <li class="nav-item">
+                <span class="nav-link text-warning">
+                    <i class="bi bi-shield-lock me-1"></i>Admin Mode
+                </span>
+            </li>
+        `;
+    },
+
+    showLoginModal() {
+        // Check if user came from landing page with signup data
+        const signupName = sessionStorage.getItem('signupName');
+        const signupEmail = sessionStorage.getItem('signupEmail');
+
+        if (signupName && signupEmail) {
+            // Switch to signup tab and pre-fill data
+            document.getElementById('signup-tab').click();
+            document.getElementById('signupName').value = signupName;
+            document.getElementById('signupEmail').value = signupEmail;
+
+            // Clear session storage
+            sessionStorage.removeItem('signupName');
+            sessionStorage.removeItem('signupEmail');
+        }
+
+        ui.showModal('loginModal');
+    },
+
+    switchToAdminMode() {
+        // Hide login modal and show API config modal
+        ui.hideModal('loginModal');
+        app.showApiConfigModal();
+    },
+
+    signup: async () => {
+        const name = document.getElementById('signupName').value.trim();
+        const email = document.getElementById('signupEmail').value.trim();
+        const password = document.getElementById('signupPassword').value;
+
+        if (!name || !email || !password) {
+            ui.showAlert('Please fill in all fields', 'danger');
             return;
         }
 
-        // Load initial data
-        await Promise.all([
-            app.loadTenants(),
-            app.loadStats(),
-            app.loadLogs()
-        ]);
+        if (password.length < 8) {
+            ui.showAlert('Password must be at least 8 characters', 'danger');
+            return;
+        }
 
-        // Set up auto-refresh for stats
-        setInterval(app.loadStats, 30000); // Every 30 seconds
+        try {
+            const response = await api.signup({ name, email, password });
+
+            // Store auth data
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            API_CONFIG.authToken = response.token;
+            API_CONFIG.currentUser = response.user;
+
+            ui.showAlert('Account created successfully!');
+            ui.hideModal('loginModal');
+
+            // Initialize app
+            await app.init();
+        } catch (error) {
+            ui.showAlert(`Signup failed: ${error.message}`, 'danger');
+        }
+    },
+
+    login: async () => {
+        const email = document.getElementById('loginEmail').value.trim();
+        const password = document.getElementById('loginPassword').value;
+
+        if (!email || !password) {
+            ui.showAlert('Please fill in all fields', 'danger');
+            return;
+        }
+
+        try {
+            const response = await api.login({ email, password });
+
+            // Store auth data
+            localStorage.setItem('authToken', response.token);
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
+            API_CONFIG.authToken = response.token;
+            API_CONFIG.currentUser = response.user;
+
+            ui.showAlert('Login successful!');
+            ui.hideModal('loginModal');
+
+            // Initialize app
+            await app.init();
+        } catch (error) {
+            ui.showAlert(`Login failed: ${error.message}`, 'danger');
+        }
+    },
+
+    logout: async () => {
+        try {
+            await api.logout();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+
+        // Clear local storage
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        API_CONFIG.authToken = '';
+        API_CONFIG.currentUser = null;
+
+        ui.showAlert('Logged out successfully!');
+        location.reload();
+    },
+
+    showApiConfigModal() {
+        // Show different config modal based on auth type
+        if (API_CONFIG.authToken) {
+            // User mode - show API config only
+            document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
+            // Hide admin API key field for users
+            document.getElementById('adminApiKey').closest('.mb-3').style.display = 'none';
+            ui.showModal('apiConfigModal');
+        } else {
+            // Admin mode - show both fields
+            document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
+            document.getElementById('adminApiKey').value = API_CONFIG.adminApiKey;
+            document.getElementById('adminApiKey').closest('.mb-3').style.display = 'block';
+            ui.showModal('apiConfigModal');
+        }
     },
 
     loadTenants: async () => {
@@ -343,18 +550,21 @@ const app = {
 
     saveApiConfig: () => {
         const baseUrl = document.getElementById('apiBaseUrl').value.trim();
-        const adminApiKey = document.getElementById('adminApiKey').value.trim();
+        const adminApiKey = document.getElementById('adminApiKey')?.value.trim() || '';
 
-        if (!baseUrl || !adminApiKey) {
-            ui.showAlert('Please fill in all fields', 'danger');
+        if (!baseUrl) {
+            ui.showAlert('Please fill in all required fields', 'danger');
             return;
         }
 
         localStorage.setItem('apiBaseUrl', baseUrl);
-        localStorage.setItem('adminApiKey', adminApiKey);
+
+        if (adminApiKey) {
+            localStorage.setItem('adminApiKey', adminApiKey);
+            API_CONFIG.adminApiKey = adminApiKey;
+        }
 
         API_CONFIG.baseUrl = baseUrl;
-        API_CONFIG.adminApiKey = adminApiKey;
 
         ui.showAlert('API configuration saved!');
         ui.hideModal('apiConfigModal');
@@ -400,5 +610,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab switching - load logs when logs tab is clicked
     document.getElementById('logs-tab').addEventListener('click', () => {
         app.loadLogs();
+    });
+
+    // Login/Signup tab switching
+    document.getElementById('login-tab').addEventListener('click', () => {
+        document.getElementById('loginBtn').classList.remove('d-none');
+        document.getElementById('signupBtn').classList.add('d-none');
+    });
+
+    document.getElementById('signup-tab').addEventListener('click', () => {
+        document.getElementById('loginBtn').classList.add('d-none');
+        document.getElementById('signupBtn').classList.remove('d-none');
     });
 });
