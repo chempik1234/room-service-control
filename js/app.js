@@ -21,7 +21,7 @@ const api = {
         const url = `${API_CONFIG.baseUrl}${endpoint}`;
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': this.getAuthHeader(),
+            'Authorization': api.getAuthHeader(),
             ...options.headers
         };
 
@@ -143,8 +143,8 @@ const ui = {
         table.innerHTML = tenants.map(tenant => `
             <tr class="fade-in">
                 <td><code class="text-muted">${tenant.id.substring(0, 8)}...</code></td>
-                <td><strong>${this.escapeHtml(tenant.name)}</strong></td>
-                <td>${this.escapeHtml(tenant.email)}</td>
+                <td><strong>${ui.escapeHtml(tenant.name)}</strong></td>
+                <td>${ui.escapeHtml(tenant.email)}</td>
                 <td><span class="badge plan-${tenant.plan}">${tenant.plan.toUpperCase()}</span></td>
                 <td>
                     <span class="badge ${tenant.status === 'active' ? 'bg-success' : 'bg-warning'}">
@@ -160,7 +160,7 @@ const ui = {
                         <button class="btn btn-sm btn-outline-secondary" data-action="edit-tenant" data-id="${tenant.id}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" data-action="delete-tenant" data-id="${tenant.id}" data-name="${this.escapeHtml(tenant.name)}" title="Delete">
+                        <button class="btn btn-sm btn-outline-danger" data-action="delete-tenant" data-id="${tenant.id}" data-name="${ui.escapeHtml(tenant.name)}" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
