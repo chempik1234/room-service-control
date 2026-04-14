@@ -154,13 +154,13 @@ const ui = {
                 <td><small class="text-muted">${new Date(tenant.createdAt).toLocaleDateString()}</small></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="app.viewTenant('${tenant.id}')" title="View API Key">
+                        <button class="btn btn-sm btn-outline-primary" data-action="view-tenant" data-id="${tenant.id}" title="View API Key">
                             <i class="bi bi-key"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-secondary" onclick="app.editTenant('${tenant.id}')" title="Edit">
+                        <button class="btn btn-sm btn-outline-secondary" data-action="edit-tenant" data-id="${tenant.id}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="app.confirmDeleteTenant('${tenant.id}', '${this.escapeHtml(tenant.name)}')" title="Delete">
+                        <button class="btn btn-sm btn-outline-danger" data-action="delete-tenant" data-id="${tenant.id}" data-name="${this.escapeHtml(tenant.name)}" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -471,7 +471,8 @@ const app = {
     loadTenants: async () => {
         try {
             ui.showLoader('tenantsTable');
-            app.tenants = await api.getTenants();
+            const response = await api.getTenants();
+            app.tenants = response.tenants || []; // Extract tenants array from response
             ui.renderTenants(app.tenants);
         } catch (error) {
             ui.showError('tenantsTable', error.message);
@@ -481,7 +482,12 @@ const app = {
     loadStats: async () => {
         try {
             const stats = await api.getStats();
-            ui.updateStats(stats);
+            ui.updateStats({
+                totalTenants: stats.totalTenants || 0,
+                activeTenants: stats.activeTenants || 0,
+                suspendedTenants: stats.suspendedTenants || 0,
+                totalRequests: stats.totalRequests || 0
+            });
         } catch (error) {
             console.error('Failed to load stats:', error);
         }
@@ -491,7 +497,7 @@ const app = {
         try {
             ui.showLoader('logsTable');
             const logs = await api.getLogs();
-            ui.renderLogs(logs);
+            ui.renderLogs(logs || []); // Ensure logs is an array
         } catch (error) {
             ui.showError('logsTable', error.message);
         }
@@ -508,14 +514,15 @@ const app = {
         }
 
         try {
-            const tenant = await api.createTenant({ name, email, plan });
+            const response = await api.createTenant({ name, email, plan });
+            const tenant = response.tenant || response; // Handle different response formats
             ui.showAlert(`Tenant "${name}" created successfully!`);
             ui.hideModal('createTenantModal');
             document.getElementById('createTenantForm').reset();
 
             // Show API key
             document.getElementById('apiKeyTenantName').textContent = `API Key for ${name}:`;
-            document.getElementById('apiKeyValue').value = tenant.apiKey;
+            document.getElementById('apiKeyValue').value = tenant.api_key || tenant.apiKey || 'Loading...';
             ui.showModal('apiKeyModal');
 
             await app.loadTenants();
@@ -587,7 +594,7 @@ const app = {
         if (!tenant) return;
 
         document.getElementById('apiKeyTenantName').textContent = `API Key for ${tenant.name}:`;
-        document.getElementById('apiKeyValue').value = tenant.apiKey || 'Loading...';
+        document.getElementById('apiKeyValue').value = tenant.api_key || tenant.apiKey || 'Loading...';
         ui.showModal('apiKeyModal');
     },
 
@@ -648,12 +655,15 @@ document.addEventListener('DOMContentLoaded', () => {
     // Admin config modal
     document.getElementById('saveAdminConfigBtn').addEventListener('click', app.saveAdminConfig);
 
-    // API config modal
-    document.getElementById('apiConfigBtn').addEventListener('click', () => {
-        document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
-        document.getElementById('adminApiKey').value = API_CONFIG.adminApiKey;
-        ui.showModal('apiConfigModal');
-    });
+    // API config modal (only exists in admin mode)
+    const apiConfigBtn = document.getElementById('apiConfigBtn');
+    if (apiConfigBtn) {
+        apiConfigBtn.addEventListener('click', () => {
+            document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
+            document.getElementById('adminApiKey').value = API_CONFIG.adminApiKey;
+            ui.showModal('apiConfigModal');
+        });
+    }
 
     document.getElementById('saveApiConfig').addEventListener('click', app.saveApiConfig);
 
@@ -682,4 +692,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Admin mode button
     document.getElementById('admin-tab').addEventListener('click', app.switchToAdminMode);
+
+    // Event delegation for dynamically added tenant action buttons
+    document.addEventListener('click', (e) => {
+        const button = e.target.closest('button[data-action]');
+        if (!button) return;
+
+        const action = button.dataset.action;
+        const id = button.dataset.id;
+        const name = button.dataset.name;
+
+        switch (action) {
+            case 'view-tenant':
+                app.viewTenant(id);
+                break;
+            case 'edit-tenant':
+                app.editTenant(id);
+                break;
+            case 'delete-tenant':
+                app.confirmDeleteTenant(id, name);
+                break;
+        }
+    });
 });
