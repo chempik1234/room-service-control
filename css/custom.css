@@ -205,6 +205,47 @@ body {
     color: var(--warning-color);
 }
 
+/* API URL Configuration Field */
+.api-config-section {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid #cbd5e1;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.api-config-section .form-label {
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 0.5rem;
+}
+
+.api-config-section .form-control {
+    border: 2px solid #e2e8f0;
+    font-weight: 500;
+    color: #1e293b;
+    transition: all 0.2s ease;
+}
+
+.api-config-section .form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.api-config-section .form-text {
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+/* Admin mode styling */
+.modal-header.bg-dark {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+}
+
+.modal-header.bg-dark .modal-title {
+    font-weight: 600;
+}
+
 /* Loading spinner */
 .spinner-border {
     width: 1.5rem;

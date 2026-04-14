@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-    baseUrl: localStorage.getItem('apiBaseUrl') || 'https://roomservice-proxy.up.railway.app',
+    baseUrl: localStorage.getItem('apiBaseUrl') || 'https://roomservice-proxy-production.up.railway.app',
     adminApiKey: localStorage.getItem('adminApiKey') || '',
     authToken: localStorage.getItem('authToken') || '',
     currentUser: JSON.parse(localStorage.getItem('currentUser') || 'null')
@@ -313,21 +313,63 @@ const app = {
             sessionStorage.removeItem('signupEmail');
         }
 
+        // Set default API URL if not already configured
+        if (!localStorage.getItem('apiBaseUrl')) {
+            document.getElementById('authApiUrl').value = 'https://roomservice-proxy-production.up.railway.app';
+        } else {
+            document.getElementById('authApiUrl').value = API_CONFIG.baseUrl;
+        }
+
         ui.showModal('loginModal');
     },
 
     switchToAdminMode() {
-        // Hide login modal and show API config modal
+        // Hide login modal and show admin config modal
         ui.hideModal('loginModal');
-        app.showApiConfigModal();
+
+        // Pre-fill admin config if available
+        document.getElementById('adminApiBaseUrl').value = API_CONFIG.baseUrl || 'https://roomservice-proxy-production.up.railway.app';
+        document.getElementById('adminApiKeyInput').value = API_CONFIG.adminApiKey || '';
+
+        ui.showModal('adminConfigModal');
+    },
+
+    saveAdminConfig() {
+        const baseUrl = document.getElementById('adminApiBaseUrl').value.trim();
+        const adminApiKey = document.getElementById('adminApiKeyInput').value.trim();
+
+        if (!baseUrl || !adminApiKey) {
+            ui.showAlert('Please fill in all fields', 'danger');
+            return;
+        }
+
+        // Save admin config
+        localStorage.setItem('apiBaseUrl', baseUrl);
+        localStorage.setItem('adminApiKey', adminApiKey);
+
+        API_CONFIG.baseUrl = baseUrl;
+        API_CONFIG.adminApiKey = adminApiKey;
+
+        // Clear user auth data
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('currentUser');
+        API_CONFIG.authToken = '';
+        API_CONFIG.currentUser = null;
+
+        ui.showAlert('Admin mode activated! You now have full access. 🔓');
+        ui.hideModal('adminConfigModal');
+
+        // Initialize app in admin mode
+        await app.init();
     },
 
     signup: async () => {
+        const apiUrl = document.getElementById('authApiUrl').value.trim();
         const name = document.getElementById('signupName').value.trim();
         const email = document.getElementById('signupEmail').value.trim();
         const password = document.getElementById('signupPassword').value;
 
-        if (!name || !email || !password) {
+        if (!apiUrl || !name || !email || !password) {
             ui.showAlert('Please fill in all fields', 'danger');
             return;
         }
@@ -336,6 +378,10 @@ const app = {
             ui.showAlert('Password must be at least 8 characters', 'danger');
             return;
         }
+
+        // Save API URL
+        localStorage.setItem('apiBaseUrl', apiUrl);
+        API_CONFIG.baseUrl = apiUrl;
 
         try {
             const response = await api.signup({ name, email, password });
@@ -346,7 +392,7 @@ const app = {
             API_CONFIG.authToken = response.token;
             API_CONFIG.currentUser = response.user;
 
-            ui.showAlert('Account created successfully!');
+            ui.showAlert('Account created successfully! Welcome to RoomService 🎉');
             ui.hideModal('loginModal');
 
             // Initialize app
@@ -357,13 +403,18 @@ const app = {
     },
 
     login: async () => {
+        const apiUrl = document.getElementById('authApiUrl').value.trim();
         const email = document.getElementById('loginEmail').value.trim();
         const password = document.getElementById('loginPassword').value;
 
-        if (!email || !password) {
+        if (!apiUrl || !email || !password) {
             ui.showAlert('Please fill in all fields', 'danger');
             return;
         }
+
+        // Save API URL
+        localStorage.setItem('apiBaseUrl', apiUrl);
+        API_CONFIG.baseUrl = apiUrl;
 
         try {
             const response = await api.login({ email, password });
@@ -374,7 +425,7 @@ const app = {
             API_CONFIG.authToken = response.token;
             API_CONFIG.currentUser = response.user;
 
-            ui.showAlert('Login successful!');
+            ui.showAlert('Login successful! Welcome back 👋');
             ui.hideModal('loginModal');
 
             // Initialize app
@@ -407,14 +458,13 @@ const app = {
             // User mode - show API config only
             document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
             // Hide admin API key field for users
-            document.getElementById('adminApiKey').closest('.mb-3').style.display = 'none';
+            document.getElementById('adminKeyField').classList.add('d-none');
             ui.showModal('apiConfigModal');
         } else {
-            // Admin mode - show both fields
-            document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
-            document.getElementById('adminApiKey').value = API_CONFIG.adminApiKey;
-            document.getElementById('adminApiKey').closest('.mb-3').style.display = 'block';
-            ui.showModal('apiConfigModal');
+            // Admin mode - redirect to admin config modal
+            document.getElementById('adminApiBaseUrl').value = API_CONFIG.baseUrl;
+            document.getElementById('adminApiKeyInput').value = API_CONFIG.adminApiKey;
+            ui.showModal('adminConfigModal');
         }
     },
 

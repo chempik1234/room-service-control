@@ -204,16 +204,27 @@
                     </ul>
 
                     <div class="tab-content" id="authTabContent">
+                        <!-- API URL Configuration (Shared) -->
+                        <div class="mb-4 p-3 bg-light rounded">
+                            <label for="authApiUrl" class="form-label">
+                                <i class="bi bi-link-45deg me-1"></i>API URL
+                            </label>
+                            <input type="url" class="form-control" id="authApiUrl"
+                                   placeholder="https://roomservice-proxy-production.up.railway.app"
+                                   value="https://roomservice-proxy-production.up.railway.app">
+                            <div class="form-text">Your RoomService Proxy API URL</div>
+                        </div>
+
                         <!-- Login Form -->
                         <div class="tab-pane fade show active" id="login" role="tabpanel">
                             <form id="loginForm">
                                 <div class="mb-3">
                                     <label for="loginEmail" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="loginEmail" required>
+                                    <input type="email" class="form-control" id="loginEmail" placeholder="you@example.com" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="loginPassword" class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="loginPassword" required>
+                                    <input type="password" class="form-control" id="loginPassword" placeholder="••••••••" required>
                                 </div>
                             </form>
                         </div>
@@ -223,15 +234,15 @@
                             <form id="signupForm">
                                 <div class="mb-3">
                                     <label for="signupName" class="form-label">Name</label>
-                                    <input type="text" class="form-control" id="signupName" required>
+                                    <input type="text" class="form-control" id="signupName" placeholder="John Doe" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="signupEmail" class="form-label">Email</label>
-                                    <input type="email" class="form-control" id="signupEmail" required>
+                                    <input type="email" class="form-control" id="signupEmail" placeholder="you@example.com" required>
                                 </div>
                                 <div class="mb-3">
                                     <label for="signupPassword" class="form-label">Password</label>
-                                    <input type="password" class="form-control" id="signupPassword" minlength="8" required>
+                                    <input type="password" class="form-control" id="signupPassword" minlength="8" placeholder="••••••••" required>
                                     <div class="form-text">Must be at least 8 characters</div>
                                 </div>
                             </form>
@@ -239,8 +250,12 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" id="loginBtn" onclick="app.login()">Login</button>
-                    <button type="button" class="btn btn-primary d-none" id="signupBtn" onclick="app.signup()">Sign Up</button>
+                    <button type="button" class="btn btn-primary" id="loginBtn" onclick="app.login()">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                    </button>
+                    <button type="button" class="btn btn-primary d-none" id="signupBtn" onclick="app.signup()">
+                        <i class="bi bi-person-plus me-1"></i>Sign Up
+                    </button>
                 </div>
             </div>
         </div>
@@ -354,7 +369,55 @@
         </div>
     </div>
 
-    <!-- API Config Modal -->
+    <!-- Admin Config Modal -->
+    <div class="modal fade" id="adminConfigModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-shield-lock me-2"></i>Admin Mode
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Admin Access:</strong> This mode gives you full access to manage all tenants and users.
+                    </div>
+
+                    <form id="adminConfigForm">
+                        <div class="mb-3">
+                            <label for="adminApiBaseUrl" class="form-label">API Base URL</label>
+                            <input type="url" class="form-control" id="adminApiBaseUrl"
+                                   placeholder="https://roomservice-proxy-production.up.railway.app"
+                                   value="https://roomservice-proxy-production.up.railway.app" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="adminApiKeyInput" class="form-label">Admin API Key</label>
+                            <input type="password" class="form-control" id="adminApiKeyInput"
+                                   placeholder="rs_admin_..." required>
+                            <div class="form-text">Found in Railway environment variables</div>
+                        </div>
+                    </form>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Not an admin?</strong> Use the regular sign up form instead.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary" id="saveAdminConfig" onclick="app.saveAdminConfig()">
+                        <i class="bi bi-shield-check me-1"></i>Enter Admin Mode
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Config Modal (for logged-in users) -->
     <div class="modal fade" id="apiConfigModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -367,12 +430,12 @@
                         <div class="mb-3">
                             <label for="apiBaseUrl" class="form-label">API Base URL</label>
                             <input type="url" class="form-control" id="apiBaseUrl"
-                                   placeholder="https://roomservice-proxy.up.railway.app" required>
+                                   placeholder="https://roomservice-proxy-production.up.railway.app" required>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-3 d-none" id="adminKeyField">
                             <label for="adminApiKey" class="form-label">Admin API Key</label>
                             <input type="password" class="form-control" id="adminApiKey"
-                                   placeholder="rs_admin_..." required>
+                                   placeholder="rs_admin_...">
                         </div>
                     </form>
                     <div class="alert alert-info">
