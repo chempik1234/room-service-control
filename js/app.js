@@ -645,6 +645,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // API key modal
     document.getElementById('copyApiKeyBtn').addEventListener('click', app.copyApiKey);
 
+    // Admin config modal
+    document.getElementById('saveAdminConfigBtn').addEventListener('click', app.saveAdminConfig);
+
     // API config modal
     document.getElementById('apiConfigBtn').addEventListener('click', () => {
         document.getElementById('apiBaseUrl').value = API_CONFIG.baseUrl;
@@ -672,4 +675,11 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('loginBtn').classList.add('d-none');
         document.getElementById('signupBtn').classList.remove('d-none');
     });
+
+    // Login and Signup buttons
+    document.getElementById('loginBtn').addEventListener('click', app.login);
+    document.getElementById('signupBtn').addEventListener('click', app.signup);
+
+    // Admin mode button
+    document.getElementById('admin-tab').addEventListener('click', app.switchToAdminMode);
 });
