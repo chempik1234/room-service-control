@@ -1,0 +1,21 @@
+{
+  "name": "room-service-control",
+  "version": "1.0.0",
+  "description": "Static SPA control panel for RoomService SaaS platform",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx -y http-server -p 8000 -c-1",
+    "dev": "npx -y http-server -p 8000 -c-1"
+  },
+  "keywords": [
+    "roomservice",
+    "saas",
+    "control-panel",
+    "static-spa"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
