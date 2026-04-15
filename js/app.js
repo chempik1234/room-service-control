@@ -39,6 +39,12 @@ const api = {
                 throw new Error('Authentication required');
             }
 
+            // Check if response is JSON (don't try to parse HTML/404 pages)
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error(`API returned ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
 
             if (!response.ok) {
