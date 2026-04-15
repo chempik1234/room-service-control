@@ -640,7 +640,32 @@ const app = {
                 await app.loadStats();
             }
         } catch (error) {
-            ui.showAlert(`Failed to create tenant: ${error.message}`, 'danger');
+            let errorMessage = `Failed to create tenant: ${error.message}`;
+
+            // Detect Railway service limit errors
+            if (error.message.includes('service limit') ||
+                error.message.includes('exceeded limit') ||
+                error.message.includes('quota exceeded')) {
+                errorMessage = `⚠️ Railway service limit reached!
+
+Your tenant was created in our system, but Railway's daily service limit prevented automatic provisioning.
+
+**What happened:**
+- Railway allows 25 services per day
+- Each tenant needs 3 services (MongoDB, Redis, RoomService)
+- Services will be automatically provisioned when quota resets
+
+**Next steps:**
+1. Your tenant is queued for provisioning
+2. Services will be created automatically within 24h
+3. You'll receive an email when ready
+4. Or contact support for manual provisioning
+
+**Status:** Tenant created (ID: ${response.tenant?.id || 'pending'})
+`;
+            }
+
+            ui.showAlert(errorMessage, 'danger');
         }
     },
 
