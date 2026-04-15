@@ -149,7 +149,12 @@ const ui = {
 
         table.innerHTML = tenants.map(tenant => `
             <tr class="fade-in">
-                <td><code class="text-muted">${tenant.id.substring(0, 8)}...</code></td>
+                <td>
+                    <code class="text-muted tenant-id" data-tenant-id="${tenant.id}" title="Click to copy">
+                        ${tenant.id}
+                        <i class="bi bi-clipboard ms-1" style="cursor: pointer; font-size: 0.8em;"></i>
+                    </code>
+                </td>
                 <td><strong>${ui.escapeHtml(tenant.name)}</strong></td>
                 <td>${ui.escapeHtml(tenant.email)}</td>
                 <td><span class="badge plan-${tenant.plan}">${tenant.plan.toUpperCase()}</span></td>
@@ -602,16 +607,22 @@ const app = {
             const response = await api.createTenant({ name, email, plan });
             const tenant = response.tenant || response; // Handle different response formats
 
+            // Close the modal and reset form
+            ui.hideModal('createTenantModal');
+            document.getElementById('createTenantForm').reset();
+
             // Check if tenant is being provisioned asynchronously
             if (tenant.status === 'provisioning' || tenant.provisioning_status === 'pending') {
-                ui.hideModal('createTenantModal');
-                document.getElementById('createTenantForm').reset();
+                // Show friendly message that services are being provisioned
+                if (isAdmin) {
+                    ui.showAlert(`🚀 Tenant "${name}" is being provisioned! Services are deploying in the background. Grab a cup of tea and check back in a few minutes. ☕`);
+                } else {
+                    ui.showAlert(`🎉 Welcome to RoomService! Your tenant "${name}" is being set up. Go make some tea - we'll have your services ready in a few minutes! ☕`);
+                }
 
-                // Show provisioning progress
-                app.showProvisioningProgress(tenant);
-
-                // Start polling for provisioning status
-                app.pollTenantProvisioning(tenant.id, name);
+                // Refresh tenant list
+                await app.loadTenants();
+                await app.loadStats();
             } else {
                 // Tenant was created synchronously (fallback)
                 if (isAdmin) {
@@ -619,9 +630,6 @@ const app = {
                 } else {
                     ui.showAlert(`🎉 Welcome to RoomService! Your tenant "${name}" is ready to use!`);
                 }
-
-                ui.hideModal('createTenantModal');
-                document.getElementById('createTenantForm').reset();
 
                 // Show API key
                 document.getElementById('apiKeyTenantName').textContent = `API Key for ${name}:`;
@@ -636,161 +644,6 @@ const app = {
         }
     },
 
-    showProvisioningProgress: (tenant) => {
-        // Create or update progress modal
-        let progressModal = document.getElementById('provisioningProgressModal');
-        if (!progressModal) {
-            // Create the modal dynamically if it doesn't exist
-            const modalHTML = `
-                <div class="modal fade" id="provisioningProgressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">
-                                    <i class="bi bi-gear-fill spinning-icon me-2"></i>
-                                    Provisioning Your RoomService Tenant
-                                </h5>
-                            </div>
-                            <div class="modal-body">
-                                <div class="text-center mb-4">
-                                    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                </div>
-
-                                <div class="progress mb-3" style="height: 25px;">
-                                    <div class="progress-bar progress-bar-striped progress-bar-animated"
-                                             role="progressbar"
-                                             style="width: 100%"
-                                             id="provisioningProgressBar">
-                                        Initializing...
-                                    </div>
-                                </div>
-
-                                <div class="alert alert-info">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <span id="provisioningStatus">Starting provisioning process...</span>
-                                </div>
-
-                                <div class="text-muted small">
-                                    <i class="bi bi-clock me-1"></i>
-                                    This may take 1-2 minutes. You can safely close this window and check back later.
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.insertAdjacentHTML('beforeend', modalHTML);
-            progressModal = document.getElementById('provisioningProgressModal');
-        }
-
-        // Update modal content
-        document.getElementById('provisioningStatus').textContent = `Provisioning tenant "${tenant.name}"...`;
-        ui.showModal('provisioningProgressModal');
-    },
-
-    pollTenantProvisioning: async (tenantId, tenantName) => {
-        const maxAttempts = 60; // 2 minutes (60 * 2s)
-        let attempts = 0;
-
-        const poll = async () => {
-            attempts++;
-
-            try {
-                const status = await api.getTenantProvisioningStatus(tenantId);
-                app.updateProvisioningUI(status);
-
-                // Check if provisioning is complete
-                if (status.provisioning_status === 'ready' || status.status === 'active') {
-                    setTimeout(() => {
-                        ui.hideModal('provisioningProgressModal');
-
-                        // Show success
-                        ui.showAlert(`🎉 Your tenant "${tenantName}" is ready to use!`);
-
-                        // Show API key
-                        document.getElementById('apiKeyTenantName').textContent = `API Key for ${tenantName}:`;
-
-                        // Get full tenant details to show API key
-                        api.getTenant(tenantId).then(tenant => {
-                            document.getElementById('apiKeyValue').value = tenant.api_key || tenant.apiKey || 'Loading...';
-                            ui.showModal('apiKeyModal');
-                        });
-
-                        // Refresh data
-                        app.loadTenants();
-                        app.loadStats();
-                    }, 1000);
-                    return;
-                }
-
-                // Check if provisioning failed
-                if (status.provisioning_status === 'failed' || status.status === 'provisioning_failed') {
-                    setTimeout(() => {
-                        ui.hideModal('provisioningProgressModal');
-                        ui.showAlert(`Provisioning failed: ${status.provisioning_error || 'Unknown error'}`, 'danger');
-                    }, 1000);
-                    return;
-                }
-
-                // Continue polling
-                if (attempts < maxAttempts) {
-                    setTimeout(poll, 2000);
-                } else {
-                    // Timeout
-                    ui.hideModal('provisioningProgressModal');
-                    ui.showAlert('Provisioning is taking longer than expected. Please check back in a few minutes.', 'warning');
-                }
-
-            } catch (error) {
-                console.error('Polling error:', error);
-                if (attempts < maxAttempts) {
-                    setTimeout(poll, 2000); // Continue polling despite errors
-                } else {
-                    ui.hideModal('provisioningProgressModal');
-                    ui.showAlert('Failed to check provisioning status. Please refresh to see if your tenant is ready.', 'warning');
-                }
-            }
-        };
-
-        // Start polling
-        poll();
-    },
-
-    updateProvisioningUI: (status) => {
-        const progressBar = document.getElementById('provisioningProgressBar');
-        const statusText = document.getElementById('provisioningStatus');
-
-        // Update progress bar based on status
-        const statusMessages = {
-            'pending': '10%',
-            'creating_services': '50%',
-            'configuring_services': '75%',
-            'ready': '100%',
-            'failed': '0%'
-        };
-
-        const progressText = statusMessages[status.provisioning_status] || '50%';
-        if (progressBar) {
-            progressBar.style.width = progressText;
-            progressBar.textContent = progressText;
-        }
-
-        // Update status message
-        const messages = {
-            'pending': 'Initializing provisioning process...',
-            'creating_services': 'Creating Railway services (MongoDB, Redis, RoomService)...',
-            'configuring_services': 'Configuring services and setting up environment...',
-            'ready': 'Setup complete! Finalizing...',
-            'failed': `Provisioning failed: ${status.provisioning_error || 'Unknown error'}`
-        };
-
-        const message = messages[status.provisioning_status] || 'Processing...';
-        if (statusText) {
-            statusText.textContent = message;
-        }
-    },
 
     editTenant: async (id) => {
         const tenant = app.tenants.find(t => t.id === id);
@@ -953,6 +806,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event delegation for dynamically added tenant action buttons
     document.addEventListener('click', (e) => {
+        // Handle tenant ID copy
+        const tenantIdElement = e.target.closest('.tenant-id');
+        if (tenantIdElement) {
+            const tenantId = tenantIdElement.dataset.tenantId;
+            navigator.clipboard.writeText(tenantId).then(() => {
+                ui.showAlert('Tenant ID copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = tenantId;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                ui.showAlert('Tenant ID copied to clipboard!');
+            });
+            return;
+        }
+
+        // Handle action buttons
         const button = e.target.closest('button[data-action]');
         if (!button) return;
 
