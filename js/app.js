@@ -158,7 +158,7 @@ const ui = {
                         ${tenant.status}
                     </span>
                 </td>
-                <td><small class="text-muted">${new Date(tenant.createdAt).toLocaleDateString()}</small></td>
+                <td><small class="text-muted">${new Date(tenant.created_at).toLocaleString()}</small></td>
                 <td>
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-outline-primary" data-action="view-tenant" data-id="${tenant.id}" title="View API Key">
