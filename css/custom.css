@@ -134,15 +134,41 @@ body {
     background-color: transparent;
 }
 
-/* Theme icons - minimal */
+/* Theme icons - more visible */
 #themeIcon, #themeIconMoon {
-    font-size: 14px;
-    opacity: 0.4;
+    font-size: 16px;
+    opacity: 0.6;
     transition: opacity 0.2s ease;
+    cursor: pointer;
 }
 
 #themeIcon:hover, #themeIconMoon:hover {
-    opacity: 0.6;
+    opacity: 1;
+}
+
+/* Make the whole theme area more prominent */
+.nav-item:has(.theme-toggle) {
+    padding: 6px 12px;
+    background-color: var(--bg-tertiary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-right: 12px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.nav-item:has(.theme-toggle):hover {
+    border-color: var(--border-hover);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .nav-item:has(.theme-toggle) {
+    background-color: #1a4a2a;
+    border-color: #2a5a3a;
+}
+
+[data-theme="dark"] .nav-item:has(.theme-toggle):hover {
+    border-color: #00EC33;
+    box-shadow: 0 2px 8px rgba(0, 235, 51, 0.2);
 }
 
 /* Stats Cards - minimal */
@@ -506,14 +532,23 @@ body {
     font-size: 14px;
 }
 
-/* Admin mode styling */
+/* Admin mode styling - ONLY for admin modal */
 .modal-header.bg-dark {
     background: linear-gradient(135deg, #002211 0%, #0a2a1a 100%) !important;
     border-bottom: 1px solid var(--primary-color);
 }
 
+/* Ensure other modals stay light in light theme */
+:not(.bg-dark) > .modal-header {
+    background-color: var(--bg-primary) !important;
+}
+
 [data-theme="dark"] .modal-header.bg-dark {
     background: linear-gradient(135deg, #001a0d 0%, #0a1a12 100%) !important;
+}
+
+[data-theme="dark"] :not(.bg-dark) > .modal-header {
+    background-color: #0a1a12 !important;
 }
 
 .modal-header.bg-dark .modal-title {
