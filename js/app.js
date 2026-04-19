@@ -19,9 +19,16 @@ const api = {
 
     async request(endpoint, options = {}) {
         const url = `${API_CONFIG.baseUrl}${endpoint}`;
+
+        // Validate and sanitize headers to prevent encoding issues
+        const authHeader = api.getAuthHeader();
+        if (authHeader && !/^[\x00-\x7F]*$/.test(authHeader)) {
+            throw new Error('Authentication header contains invalid characters. Please check your API key.');
+        }
+
         const headers = {
             'Content-Type': 'application/json',
-            'Authorization': api.getAuthHeader(),
+            'Authorization': authHeader,
             ...options.headers
         };
 
@@ -53,6 +60,13 @@ const api = {
 
             return data;
         } catch (error) {
+            // Provide better error messages for common issues
+            if (error.message.includes('non ISO-8859-1')) {
+                throw new Error('Authentication failed: Your API key contains invalid characters. Please re-enter your admin API key.');
+            } else if (error.message.includes('Failed to fetch')) {
+                throw new Error('Network error: Unable to connect to the API. Please check your internet connection and API URL.');
+            }
+
             console.error('API Error:', error);
             throw error;
         }
@@ -242,6 +256,9 @@ const app = {
     deleteTenantId: null,
 
     init: async () => {
+        // Initialize theme
+        app.initTheme();
+
         // Check if user is authenticated
         if (API_CONFIG.authToken && API_CONFIG.currentUser) {
             // User is logged in
@@ -268,6 +285,36 @@ const app = {
         } else {
             // Not configured - show login
             app.showLoginModal();
+        }
+    },
+
+    initTheme: () => {
+        // Check for saved theme preference or default to light
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        app.updateThemeIcons(savedTheme);
+
+        // Set up theme toggle listener
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            app.updateThemeIcons(newTheme);
+        });
+    },
+
+    updateThemeIcons: (theme) => {
+        const sunIcon = document.getElementById('themeIcon');
+        const moonIcon = document.getElementById('themeIconMoon');
+
+        if (theme === 'dark') {
+            sunIcon.style.opacity = '0.3';
+            moonIcon.style.opacity = '1';
+        } else {
+            sunIcon.style.opacity = '1';
+            moonIcon.style.opacity = '0.3';
         }
     },
 
@@ -366,6 +413,20 @@ const app = {
 
         if (!baseUrl || !adminApiKey) {
             ui.showAlert('Please fill in all fields', 'danger');
+            return;
+        }
+
+        // Validate API key for non-ASCII characters
+        if (!/^[\x00-\x7F]*$/.test(adminApiKey)) {
+            ui.showAlert('Admin API key contains invalid characters. Please copy the exact API key from Railway environment variables.', 'danger');
+            return;
+        }
+
+        // Validate URL format
+        try {
+            new URL(baseUrl);
+        } catch (error) {
+            ui.showAlert('Invalid API URL format. Please enter a valid URL (e.g., https://roomservice-proxy-production.up.railway.app)', 'danger');
             return;
         }
 
@@ -709,21 +770,52 @@ Your tenant was created in our system, but Railway's daily service limit prevent
     confirmDeleteTenant: (id, name) => {
         app.deleteTenantId = id;
         document.getElementById('deleteTenantName').textContent = name;
+
+        // Reset delete button state
+        const deleteBtn = document.getElementById('confirmDelete');
+        deleteBtn.disabled = false;
+        deleteBtn.innerHTML = 'Delete';
+        deleteBtn.classList.remove('btn-secondary');
+        deleteBtn.classList.add('btn-danger');
+
         ui.showModal('deleteConfirmModal');
     },
 
     deleteTenant: async () => {
         if (!app.deleteTenantId) return;
 
+        const deleteBtn = document.getElementById('confirmDelete');
+
         try {
+            // Show loading state
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Deleting...';
+            deleteBtn.classList.remove('btn-danger');
+            deleteBtn.classList.add('btn-secondary');
+
+            // Add timeout message for long operations
+            const timeoutWarning = setTimeout(() => {
+                if (deleteBtn.disabled) {
+                    ui.showAlert('⏳ Deletion is taking longer than expected... Infrastructure cleanup can take up to 30 seconds.', 'info');
+                }
+            }, 5000);
+
             await api.deleteTenant(app.deleteTenantId);
-            ui.showAlert('Tenant deleted successfully!');
+            clearTimeout(timeoutWarning);
+
+            ui.showAlert('✅ Tenant deleted successfully!');
             ui.hideModal('deleteConfirmModal');
             app.deleteTenantId = null;
             await app.loadTenants();
             await app.loadStats();
         } catch (error) {
-            ui.showAlert(`Failed to delete tenant: ${error.message}`, 'danger');
+            // Reset button state on error
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = 'Delete';
+            deleteBtn.classList.remove('btn-secondary');
+            deleteBtn.classList.add('btn-danger');
+
+            ui.showAlert(`❌ Failed to delete tenant: ${error.message}`, 'danger');
         }
     },
 
@@ -749,6 +841,20 @@ Your tenant was created in our system, but Railway's daily service limit prevent
 
         if (!baseUrl) {
             ui.showAlert('Please fill in all required fields', 'danger');
+            return;
+        }
+
+        // Validate URL format
+        try {
+            new URL(baseUrl);
+        } catch (error) {
+            ui.showAlert('Invalid API URL format. Please enter a valid URL.', 'danger');
+            return;
+        }
+
+        // Validate admin API key if provided
+        if (adminApiKey && !/^[\x00-\x7F]*$/.test(adminApiKey)) {
+            ui.showAlert('Admin API key contains invalid characters. Please check your API key.', 'danger');
             return;
         }
 
@@ -790,6 +896,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Admin config modal
     document.getElementById('saveAdminConfigBtn').addEventListener('click', app.saveAdminConfig);
+
+    // Switch to signup button in admin modal
+    document.getElementById('switchToSignupBtn').addEventListener('click', () => {
+        ui.hideModal('adminConfigModal');
+        // Show login modal with signup tab active
+        document.getElementById('loginModal').classList.add('show');
+        document.getElementById('loginModal').style.display = 'block';
+        document.body.classList.add('modal-open');
+        // Switch to signup tab
+        document.getElementById('signup-tab').click();
+    });
 
     // API config modal (only exists in admin mode)
     const apiConfigBtn = document.getElementById('apiConfigBtn');
