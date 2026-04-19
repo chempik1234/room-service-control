@@ -108,6 +108,11 @@ body {
     padding: 8px 0; /* Reduced padding */
 }
 
+[data-theme="dark"] .navbar {
+    background-color: #001a0d !important;
+    border-bottom-color: #1a4a2a;
+}
+
 .navbar-brand {
     font-weight: 400; /* Lighter */
     font-size: 17px; /* Professional size */
@@ -374,12 +379,15 @@ body {
 }
 
 .btn-close {
-    filter: invert(0);
     opacity: 0.5;
 }
 
+.btn-close:hover {
+    opacity: 0.75;
+}
+
 [data-theme="dark"] .btn-close {
-    filter: invert(1);
+    filter: invert(1) brightness(2);
 }
 
 /* Forms - minimal */
@@ -635,8 +643,24 @@ code {
     transition: border-color 0.2s ease;
 }
 
+[data-theme="dark"] .theme-toggle {
+    background: #1a4a2a;
+    border-color: #2a5a3a;
+}
+
 .theme-toggle:hover {
     border-color: var(--border-hover);
+    transform: scale(1.05); /* Subtle hint it's interactive */
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+    border-color: #00EC33;
+}
+
+/* Make theme icons more obviously clickable */
+#themeIcon, #themeIconMoon {
+    cursor: pointer;
+    transition: opacity 0.2s ease;
 }
 
 .theme-toggle-slider {
@@ -653,6 +677,244 @@ code {
 [data-theme="dark"] .theme-toggle-slider {
     left: 20px;
     background: var(--primary-color);
+}
+
+/* Dark theme fixes */
+[data-theme="dark"] body {
+    background-color: #000a05; /* Much darker background */
+}
+
+[data-theme="dark"] .container-fluid {
+    background-color: #000a05; /* Dark background for content area */
+}
+
+[data-theme="dark"] .table {
+    background-color: #0a1a12; /* Dark table background */
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: #001a0d;
+    border-bottom-color: #2a5a3a;
+    color: #8ab896;
+}
+
+[data-theme="dark"] .table tbody tr {
+    border-bottom-color: #1a4a2a;
+}
+
+[data-theme="dark"] .table tbody tr:hover {
+    background-color: #0a2a1a;
+}
+
+[data-theme="dark"] .nav-tabs {
+    border-bottom-color: #1a4a2a;
+}
+
+[data-theme="dark"] .nav-link {
+    color: #8ab896;
+}
+
+[data-theme="dark"] .nav-link:hover {
+    color: #00EC33;
+    background-color: #0a1a12;
+}
+
+[data-theme="dark"] .nav-link.active {
+    color: #00EC33;
+    border-bottom-color: #00EC33;
+}
+
+[data-theme="dark"] .btn-primary {
+    background-color: transparent;
+    border-color: #00EC33;
+    color: #00EC33 !important;
+}
+
+[data-theme="dark"] .btn-primary:hover {
+    background-color: #00EC33;
+    color: #000a05 !important;
+}
+
+[data-theme="dark"] .stats-card {
+    background-color: #0a1a12;
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .modal-content {
+    background-color: #0a1a12;
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+    background-color: #001a0d;
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-select {
+    background-color: #001a0d;
+    border-color: #1a4a2a;
+    color: #e0ffe0;
+}
+
+[data-theme="dark"] .api-config-section {
+    background-color: #001a0d;
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .btn-outline-primary {
+    color: #00EC33 !important;
+    border-color: #00EC33;
+    background-color: transparent;
+}
+
+[data-theme="dark"] .btn-outline-primary:hover {
+    background-color: #00EC33;
+    color: #000a05 !important;
+}
+
+[data-theme="dark"] .btn-outline-secondary {
+    color: #8ab896 !important;
+    border-color: #1a4a2a;
+    background-color: transparent;
+}
+
+[data-theme="dark"] .btn-outline-secondary:hover {
+    background-color: #1a4a2a;
+    color: #e0ffe0 !important;
+    border-color: #2a5a3a;
+}
+
+[data-theme="dark"] .btn-secondary {
+    background-color: #1a4a2a;
+    border-color: #2a5a3a;
+    color: #e0ffe0 !important;
+}
+
+[data-theme="dark"] .btn-secondary:hover {
+    background-color: #2a5a3a;
+    border-color: #3a6a4a;
+}
+
+[data-theme="dark"] .badge {
+    color: #e0ffe0 !important;
+}
+
+[data-theme="dark"] .badge.bg-success {
+    background-color: #00d62e !important;
+    color: #000a05 !important;
+}
+
+[data-theme="dark"] .badge.bg-warning {
+    background-color: #f59e0b !important;
+    color: #000a05 !important;
+}
+
+[data-theme="dark"] .badge.bg-danger {
+    background-color: #ef4444 !important;
+    color: #FFFFFF !important;
+}
+
+[data-theme="dark"] .badge.bg-info {
+    background-color: #00a8e8 !important;
+    color: #000a05 !important;
+}
+
+[data-theme="dark"] .badge.bg-secondary {
+    background-color: #1a4a2a !important;
+    color: #8ab896 !important;
+}
+
+[data-theme="dark"] code {
+    background-color: #1a4a2a;
+    color: #00EC33;
+    border-color: #2a5a3a;
+}
+
+[data-theme="dark"] .plan-free {
+    background-color: #1a4a2a;
+    color: #8ab896;
+    border-color: #2a5a3a;
+}
+
+[data-theme="dark"] .plan-pro {
+    background-color: rgba(0, 235, 51, 0.1);
+    color: #00EC33;
+    border-color: #00EC33;
+}
+
+[data-theme="dark"] .plan-enterprise {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border-color: #f59e0b;
+}
+
+[data-theme="dark"] .stats-label {
+    color: #8ab896;
+}
+
+[data-theme="dark"] .stats-value {
+    color: #e0ffe0;
+}
+
+[data-theme="dark"] .text-muted {
+    color: #6a9876 !important;
+}
+
+[data-theme="dark"] .alert-info {
+    background-color: rgba(0, 235, 51, 0.15);
+    border-color: #00EC33;
+    color: #00EC33;
+}
+
+[data-theme="dark"] .alert-warning {
+    background-color: rgba(245, 158, 11, 0.15);
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+[data-theme="dark"] .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+/* Fix dropdowns in dark mode */
+[data-theme="dark"] .dropdown-menu {
+    background-color: #0a1a12;
+    border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .dropdown-item {
+    color: #e0ffe0;
+}
+
+[data-theme="dark"] .dropdown-item:hover {
+    background-color: #1a4a2a;
+    color: #00EC33;
+}
+
+/* Fix action button tooltips and hover states */
+[data-theme="dark"] .btn-outline-danger {
+    color: #ef4444 !important;
+    border-color: #ef4444;
+    background-color: transparent;
+}
+
+[data-theme="dark"] .btn-outline-danger:hover {
+    background-color: #ef4444;
+    color: #FFFFFF !important;
+}
+
+/* Fix modal titles and close buttons in dark mode */
+[data-theme="dark"] .modal-title {
+    color: #e0ffe0;
+}
+
+[data-theme="dark"] .btn-close {
+    filter: invert(1) brightness(2);
 }
 
 /* Provisioning modal styles - minimal movement */

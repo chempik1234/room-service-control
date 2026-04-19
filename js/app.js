@@ -225,14 +225,47 @@ const ui = {
     },
 
     showModal: (modalId) => {
+        // First, close any other open modals to prevent overlap
+        document.querySelectorAll('.modal.show').forEach(openModal => {
+            if (openModal.id !== modalId) {
+                const existingModal = bootstrap.Modal.getInstance(openModal);
+                if (existingModal) {
+                    existingModal.hide();
+                }
+            }
+        });
+
+        // Clean up any leftover backdrops
+        setTimeout(() => {
+            document.querySelectorAll('.modal-backdrop').forEach((backdrop, index) => {
+                if (document.querySelectorAll('.modal-backdrop').length > 1) {
+                    backdrop.remove(); // Remove extra backdrops
+                }
+            });
+        }, 100);
+
         const modal = new bootstrap.Modal(document.getElementById(modalId));
         modal.show();
         return modal;
     },
 
     hideModal: (modalId) => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
-        if (modal) modal.hide();
+        const modalElement = document.getElementById(modalId);
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+            modal.hide();
+        } else {
+            // Fallback: manually hide if Bootstrap instance doesn't exist
+            modalElement.classList.remove('show');
+            modalElement.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            // Remove backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
     },
 
     showAlert: (message, type = 'success') => {
@@ -295,14 +328,21 @@ const app = {
         app.updateThemeIcons(savedTheme);
 
         // Set up theme toggle listener
-        document.getElementById('themeToggle').addEventListener('click', () => {
-            const currentTheme = document.documentElement.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            app.updateThemeIcons(newTheme);
-        });
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                app.updateThemeIcons(newTheme);
+
+                // Show confirmation
+                const themeName = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+                ui.showAlert(`Switched to ${themeName} 🌙☀️`, 'success');
+            });
+        }
     },
 
     updateThemeIcons: (theme) => {
@@ -899,13 +939,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Switch to signup button in admin modal
     document.getElementById('switchToSignupBtn').addEventListener('click', () => {
-        ui.hideModal('adminConfigModal');
-        // Show login modal with signup tab active
-        document.getElementById('loginModal').classList.add('show');
-        document.getElementById('loginModal').style.display = 'block';
-        document.body.classList.add('modal-open');
-        // Switch to signup tab
-        document.getElementById('signup-tab').click();
+        // Properly hide admin modal using Bootstrap
+        const adminModal = bootstrap.Modal.getInstance(document.getElementById('adminConfigModal'));
+        if (adminModal) {
+            adminModal.hide();
+        }
+
+        // Wait for admin modal to close, then show login modal
+        setTimeout(() => {
+            // Remove any remaining modal backdrops
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+                backdrop.remove();
+            });
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+
+            // Show login modal with signup tab active
+            ui.showModal('loginModal');
+            // Switch to signup tab
+            document.getElementById('signup-tab').click();
+        }, 300); // Wait for Bootstrap transition to complete
     });
 
     // API config modal (only exists in admin mode)
