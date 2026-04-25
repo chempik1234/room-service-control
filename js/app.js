@@ -865,6 +865,10 @@ Your tenant was created in our system, but Railway's daily service limit prevent
 
         document.getElementById('apiKeyTenantName').textContent = `API Key for ${tenant.name}:`;
         document.getElementById('apiKeyValue').value = tenant.api_key || tenant.apiKey || 'Loading...';
+
+        // Store current tenant ID for regenerate functionality
+        app.currentTenantId = id;
+
         ui.showModal('apiKeyModal');
     },
 
@@ -873,6 +877,51 @@ Your tenant was created in our system, but Railway's daily service limit prevent
         apiKeyInput.select();
         document.execCommand('copy');
         ui.showAlert('API key copied to clipboard!');
+    },
+
+    regenerateApiKey: async () => {
+        if (!app.currentTenantId) {
+            ui.showAlert('No tenant selected', 'danger');
+            return;
+        }
+
+        const tenant = app.tenants.find(t => t.id === app.currentTenantId);
+        if (!tenant) {
+            ui.showAlert('Tenant not found', 'danger');
+            return;
+        }
+
+        // Confirm regeneration
+        if (!confirm(`Are you sure you want to regenerate the API key for "${tenant.name}"?\n\nThe old API key will immediately stop working.`)) {
+            return;
+        }
+
+        try {
+            const regenerateBtn = document.getElementById('regenerateApiKeyBtn');
+            const originalText = regenerateBtn.innerHTML;
+
+            // Show loading state
+            regenerateBtn.disabled = true;
+            regenerateBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Regenerating...';
+
+            const response = await api.regenerateApiKey(app.currentTenantId);
+
+            // Update the API key input with the new key
+            document.getElementById('apiKeyValue').value = response.api_key;
+
+            // Update tenant in local array
+            tenant.api_key = response.api_key;
+            tenant.apiKey = response.api_key;
+
+            ui.showAlert('✅ API key regenerated successfully! Make sure to update any applications using the old key.');
+        } catch (error) {
+            ui.showAlert(`❌ Failed to regenerate API key: ${error.message}`, 'danger');
+        } finally {
+            // Reset button state
+            const regenerateBtn = document.getElementById('regenerateApiKeyBtn');
+            regenerateBtn.disabled = false;
+            regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Regenerate API Key';
+        }
     },
 
     saveApiConfig: () => {
@@ -933,6 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API key modal
     document.getElementById('copyApiKeyBtn').addEventListener('click', app.copyApiKey);
+    document.getElementById('regenerateApiKeyBtn').addEventListener('click', app.regenerateApiKey);
 
     // Admin config modal
     document.getElementById('saveAdminConfigBtn').addEventListener('click', app.saveAdminConfig);
