@@ -173,7 +173,7 @@ const ui = {
                 <td>${ui.escapeHtml(tenant.email)}</td>
                 <td><span class="badge plan-${tenant.plan}">${tenant.plan.toUpperCase()}</span></td>
                 <td>
-                    <span class="badge ${tenant.status === 'active' ? 'bg-success' : 'bg-warning'}">
+                    <span class="badge ${ui.getStatusBadgeClass(tenant.status)}">
                         ${tenant.status}
                     </span>
                 </td>
@@ -222,6 +222,29 @@ const ui = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    getStatusBadgeClass: (status) => {
+        switch (status) {
+            case 'active':
+                return 'bg-success';
+            case 'unhealthy':
+                return 'bg-danger';
+            case 'provisioning':
+            case 'creating_services':
+            case 'configuring_services':
+                return 'bg-info';
+            case 'deleted':
+            case 'deleting':
+                return 'bg-dark';
+            case 'suspended':
+                return 'bg-warning';
+            case 'provisioning_failed':
+            case 'failed':
+                return 'bg-danger';
+            default:
+                return 'bg-secondary';
+        }
     },
 
     showModal: (modalId) => {
