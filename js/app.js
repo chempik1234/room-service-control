@@ -204,7 +204,7 @@ const ui = {
         const table = document.getElementById('logsTable');
 
         if (!logs || logs.length === 0) {
-            ui.showEmpty('logsTable', 'No logs available', 5);
+            ui.showEmpty('logsTable', 'No logs available', 6);
             return;
         }
 
@@ -218,7 +218,8 @@ const ui = {
                         ${log.statusCode}
                     </span>
                 </td>
-                <td>${log.responseTime}ms</td>
+                <td><small class="text-muted">${log.latencyMs}ms</small></td>
+                <td><span class="badge bg-info">${log.requestType || 'unary'}</span></td>
             </tr>
         `).join('');
     },
