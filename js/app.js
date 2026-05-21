@@ -104,8 +104,9 @@ const api = {
         method: 'POST'
     }),
 
-    // Stats
-    getStats: () => api.request('/api/stats')
+    // Stats and logs
+    getStats: () => api.request('/api/stats'),
+    getLogs: () => api.request('/api/logs')
 };
 
 // UI functions
@@ -195,6 +196,29 @@ const ui = {
                         </button>
                     </div>
                 </td>
+            </tr>
+        `).join('');
+    },
+
+    renderLogs: (logs) => {
+        const table = document.getElementById('logsTable');
+
+        if (!logs || logs.length === 0) {
+            ui.showEmpty('logsTable', 'No logs available', 5);
+            return;
+        }
+
+        table.innerHTML = logs.map(log => `
+            <tr class="fade-in">
+                <td><small class="text-muted">${new Date(log.timestamp).toLocaleString()}</small></td>
+                <td><code class="text-muted">${log.tenantId?.substring(0, 8) || 'N/A'}...</code></td>
+                <td><span class="badge bg-secondary">${log.method}</span></td>
+                <td>
+                    <span class="badge ${log.statusCode >= 200 && log.statusCode < 300 ? 'bg-success' : 'bg-danger'}">
+                        ${log.statusCode}
+                    </span>
+                </td>
+                <td>${log.responseTime}ms</td>
             </tr>
         `).join('');
     },
@@ -303,7 +327,8 @@ const app = {
             // Load initial data
             await Promise.all([
                 app.loadTenants(),
-                app.loadStats()
+                app.loadStats(),
+                app.loadLogs()
             ]);
             // Set up auto-refresh for stats
             setInterval(app.loadStats, 30000); // Every 30 seconds
@@ -313,7 +338,8 @@ const app = {
             // Load initial data
             await Promise.all([
                 app.loadTenants(),
-                app.loadStats()
+                app.loadStats(),
+                app.loadLogs()
             ]);
             // Set up auto-refresh for stats
             setInterval(app.loadStats, 30000); // Every 30 seconds
@@ -641,6 +667,16 @@ const app = {
             });
         } catch (error) {
             console.error('Failed to load stats:', error);
+        }
+    },
+
+    loadLogs: async () => {
+        try {
+            ui.showLoader('logsTable');
+            const logs = await api.getLogs();
+            ui.renderLogs(logs || []); // Ensure logs is an array
+        } catch (error) {
+            ui.showError('logsTable', error.message);
         }
     },
 
@@ -1034,6 +1070,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('saveApiConfig').addEventListener('click', app.saveApiConfig);
+
+    // Refresh logs button
+    document.getElementById('refreshLogsBtn').addEventListener('click', app.loadLogs);
+
+    // Tab switching - load logs when logs tab is clicked
+    document.getElementById('logs-tab').addEventListener('click', () => {
+        app.loadLogs();
+    });
 
     // Login/Signup tab switching
     document.getElementById('login-tab').addEventListener('click', () => {
