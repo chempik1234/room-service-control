@@ -189,10 +189,10 @@ const ui = {
                         <button class="btn btn-sm btn-outline-secondary" data-action="edit-tenant" data-id="${tenant.id}" title="Edit">
                             <i class="bi bi-pencil"></i>
                         </button>
+                        ` : ''}
                         <button class="btn btn-sm btn-outline-danger" data-action="delete-tenant" data-id="${tenant.id}" data-name="${ui.escapeHtml(tenant.name)}" title="Delete">
                             <i class="bi bi-trash"></i>
                         </button>
-                        ` : ''}
                     </div>
                 </td>
             </tr>
@@ -351,6 +351,11 @@ const app = {
         const sunIcon = document.getElementById('themeIcon');
         const moonIcon = document.getElementById('themeIconMoon');
 
+        // Check if icons exist before updating
+        if (!sunIcon || !moonIcon) {
+            return;
+        }
+
         if (theme === 'dark') {
             sunIcon.style.opacity = '0.3';
             moonIcon.style.opacity = '1';
@@ -363,6 +368,13 @@ const app = {
     updateUIForLoggedInUser() {
         // Update navbar for logged-in user
         const navbar = document.querySelector('.navbar-nav.ms-auto');
+
+        // Check if navbar exists before updating
+        if (!navbar) {
+            console.warn('Navbar element not found');
+            return;
+        }
+
         navbar.innerHTML = `
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
@@ -384,6 +396,13 @@ const app = {
     updateUIForAdminMode() {
         // Update navbar for admin mode
         const navbar = document.querySelector('.navbar-nav.ms-auto');
+
+        // Check if navbar exists before updating
+        if (!navbar) {
+            console.warn('Navbar element not found');
+            return;
+        }
+
         navbar.innerHTML = `
             <li class="nav-item">
                 <a class="nav-link" href="#" onclick="app.showApiConfigModal()">
