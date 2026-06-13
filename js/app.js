@@ -1,6 +1,6 @@
 // API Configuration
 const API_CONFIG = {
-    baseUrl: localStorage.getItem('apiBaseUrl') || 'https://roomservice-proxy-production.up.railway.app',
+    baseUrl: localStorage.getItem('apiBaseUrl') || 'https://roomky.chickenkiller.com',
     adminApiKey: localStorage.getItem('adminApiKey') || '',
     authToken: localStorage.getItem('authToken') || '',
     currentUser: JSON.parse(localStorage.getItem('currentUser') || 'null')
@@ -462,7 +462,7 @@ const app = {
 
         // Set default API URL if not already configured
         if (!localStorage.getItem('apiBaseUrl')) {
-            document.getElementById('authApiUrl').value = 'https://roomservice-proxy-production.up.railway.app';
+            document.getElementById('authApiUrl').value = 'https://roomky.chickenkiller.com';
         } else {
             document.getElementById('authApiUrl').value = API_CONFIG.baseUrl;
         }
@@ -489,7 +489,7 @@ const app = {
         ui.hideModal('loginModal');
 
         // Pre-fill admin config if available
-        document.getElementById('adminApiBaseUrl').value = API_CONFIG.baseUrl || 'https://roomservice-proxy-production.up.railway.app';
+        document.getElementById('adminApiBaseUrl').value = API_CONFIG.baseUrl || 'https://roomky.chickenkiller.com';
         document.getElementById('adminApiKeyInput').value = API_CONFIG.adminApiKey || '';
 
         ui.showModal('adminConfigModal');
@@ -514,7 +514,7 @@ const app = {
         try {
             new URL(baseUrl);
         } catch (error) {
-            ui.showAlert('Invalid API URL format. Please enter a valid URL (e.g., https://roomservice-proxy-production.up.railway.app)', 'danger');
+            ui.showAlert('Invalid API URL format. Please enter a valid URL (e.g., https://roomky.chickenkiller.com)', 'danger');
             return;
         }
 
