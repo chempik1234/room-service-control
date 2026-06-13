@@ -369,7 +369,7 @@ const app = {
 
                 // Show confirmation
                 const themeName = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
-                ui.showAlert(`Switched to ${themeName} 🌙☀️`, 'success');
+                ui.showAlert(`Switched to ${themeName}`, 'success');
             });
         }
     },
@@ -403,6 +403,16 @@ const app = {
         }
 
         navbar.innerHTML = `
+            <li class="nav-item me-3 d-flex align-items-center">
+                <span class="me-2" style="font-size: 14px; opacity: 0.7;">Theme:</span>
+                <div class="d-flex align-items-center" title="Toggle dark/light theme">
+                    <i class="bi bi-sun me-2" id="themeIcon" style="font-size: 18px;"></i>
+                    <div class="theme-toggle" id="themeToggle" title="Click to toggle theme">
+                        <div class="theme-toggle-slider"></div>
+                    </div>
+                    <i class="bi bi-moon ms-2" id="themeIconMoon" style="font-size: 18px;"></i>
+                </div>
+            </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                     <i class="bi bi-person-circle me-1"></i>${API_CONFIG.currentUser.name}
@@ -418,6 +428,20 @@ const app = {
                 </ul>
             </li>
         `;
+
+        // Re-initialize theme toggle listener since DOM was replaced
+        const themeToggle = document.getElementById('themeToggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                app.updateThemeIcons(newTheme);
+                const themeName = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
+                ui.showAlert(`Switched to ${themeName}`, 'success');
+            });
+        }
     },
 
     updateUIForAdminMode() {
