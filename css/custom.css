@@ -746,12 +746,22 @@ code {
     color: #8ab896;
 }
 
+[data-theme="dark"] .table td {
+    color: #e0ffe0;
+}
+
 [data-theme="dark"] .table tbody tr {
     border-bottom-color: #1a4a2a;
 }
 
 [data-theme="dark"] .table tbody tr:hover {
     background-color: #0a2a1a;
+}
+
+[data-theme="dark"] .table code,
+[data-theme="dark"] .table small,
+[data-theme="dark"] .table .text-muted {
+    color: #8ab896 !important;
 }
 
 [data-theme="dark"] .nav-tabs {
