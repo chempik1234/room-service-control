@@ -648,6 +648,22 @@ code {
     border: 1px solid var(--border-color);
 }
 
+/* Clickable code elements */
+.log-tenant-id {
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.log-tenant-id:hover {
+    background-color: var(--border-hover);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .log-tenant-id:hover {
+    background-color: #1a4a2a;
+    border-color: #00EC33;
+}
+
 .text-muted {
     color: var(--text-tertiary) !important;
 }
@@ -736,8 +752,12 @@ code {
 }
 
 [data-theme="dark"] .table {
-    background-color: #0a1a12; /* Dark table background */
+    background-color: #0a1a12 !important; /* Dark table background */
     border-color: #1a4a2a;
+}
+
+[data-theme="dark"] .table-responsive {
+    background-color: #0a1a12 !important;
 }
 
 [data-theme="dark"] .table thead th {

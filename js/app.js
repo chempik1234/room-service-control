@@ -211,7 +211,7 @@ const ui = {
         table.innerHTML = logs.map(log => `
             <tr class="fade-in">
                 <td><small class="text-muted">${new Date(log.timestamp).toLocaleString()}</small></td>
-                <td><code class="text-muted">${log.tenantId?.substring(0, 8) || 'N/A'}...</code></td>
+                <td><code class="text-muted log-tenant-id" data-tenant-id="${log.tenantId || 'N/A'}" title="Click to copy: ${log.tenantId || 'N/A'}">${log.tenantId?.substring(0, 8) || 'N/A'}...</code></td>
                 <td><span class="badge bg-secondary">${log.method}</span></td>
                 <td>
                     <span class="badge ${log.statusCode >= 200 && log.statusCode < 300 ? 'bg-success' : 'bg-danger'}">
@@ -1122,6 +1122,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const tenantIdElement = e.target.closest('.tenant-id');
         if (tenantIdElement) {
             const tenantId = tenantIdElement.dataset.tenantId;
+            navigator.clipboard.writeText(tenantId).then(() => {
+                ui.showAlert('Tenant ID copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = tenantId;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                ui.showAlert('Tenant ID copied to clipboard!');
+            });
+            return;
+        }
+
+        // Handle log tenant ID copy
+        const logTenantIdElement = e.target.closest('.log-tenant-id');
+        if (logTenantIdElement) {
+            const tenantId = logTenantIdElement.dataset.tenantId;
             navigator.clipboard.writeText(tenantId).then(() => {
                 ui.showAlert('Tenant ID copied to clipboard!');
             }).catch(() => {
