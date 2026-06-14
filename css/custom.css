@@ -455,6 +455,10 @@ body {
     border: 1px solid;
     border-radius: 6px;
     padding: 12px 16px; /* Minimal padding */
+}
+
+/* Notification alerts that float at top - created dynamically */
+.alert-notification {
     position: fixed;
     top: 0;
     left: 0;
