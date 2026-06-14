@@ -366,10 +366,6 @@ const app = {
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 app.updateThemeIcons(newTheme);
-
-                // Show confirmation
-                const themeName = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
-                ui.showAlert(`Switched to ${themeName}`, 'success');
             });
         }
     },
@@ -438,8 +434,6 @@ const app = {
                 document.documentElement.setAttribute('data-theme', newTheme);
                 localStorage.setItem('theme', newTheme);
                 app.updateThemeIcons(newTheme);
-                const themeName = newTheme === 'dark' ? 'Dark Mode' : 'Light Mode';
-                ui.showAlert(`Switched to ${themeName}`, 'success');
             });
         }
     },
